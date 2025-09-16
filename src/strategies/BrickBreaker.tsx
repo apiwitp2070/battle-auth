@@ -1,4 +1,4 @@
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -76,12 +76,6 @@ export default function SignIn() {
     null
   );
   const [transformProgress, setTransformProgress] = useState(0);
-  const transformSnapshotRef = useRef<{
-    cardX: number;
-    cardY: number;
-    cardWidth: number;
-    cardHeight: number;
-  } | null>(null);
 
   useEffect(() => {
     phaseRef.current = phase;
@@ -116,12 +110,6 @@ export default function SignIn() {
 
       const arenaRect = arena.getBoundingClientRect();
       const enemyRect = enemy.getBoundingClientRect();
-      const snapshot = transformSnapshotRef.current;
-      const enemyWidth = snapshot?.cardWidth ?? enemyRect.width;
-      const enemyHeight = snapshot?.cardHeight ?? enemyRect.height;
-      const initialX = snapshot?.cardX ?? arenaRect.width / 2 - enemyWidth / 2;
-      const initialY =
-        snapshot?.cardY ?? arenaRect.height / 2 - enemyHeight / 2;
       const paddleWidth = Math.min(220, Math.max(160, arenaRect.width * 0.2));
       const paddleX = arenaRect.width / 2 - paddleWidth / 2;
 
@@ -138,14 +126,14 @@ export default function SignIn() {
         enemy: {
           x: Math.max(
             ENEMY_PADDING,
-            Math.min(arenaRect.width - enemyWidth - ENEMY_PADDING, initialX)
+            Math.min(
+              arenaRect.width - enemyRect.width - ENEMY_PADDING,
+              arenaRect.width / 2 - enemyRect.width / 2
+            )
           ),
-          y: Math.max(
-            ENEMY_PADDING * 1.2,
-            Math.min(arenaRect.height * 0.55 - enemyHeight, initialY)
-          ),
-          width: enemyWidth,
-          height: enemyHeight,
+          y: ENEMY_PADDING * 2,
+          width: enemyRect.width,
+          height: enemyRect.height,
           vx: 2.2 + Math.random() * 1.2,
           vy: 1.8 + Math.random() * 1.4,
           hp: ENEMY_HP,
@@ -155,7 +143,6 @@ export default function SignIn() {
         hitCooldown: 0,
         combo: 0,
       });
-      transformSnapshotRef.current = null;
     };
 
     const frame = requestAnimationFrame(init);
@@ -383,9 +370,8 @@ export default function SignIn() {
 
     const arena = arenaRef.current;
     const buttonWrapper = loginButtonWrapperRef.current;
-    const cardElement = enemyRef.current;
 
-    if (!arena || !buttonWrapper || !cardElement) {
+    if (!arena || !buttonWrapper) {
       setPhase("battle");
       return;
     }
@@ -397,7 +383,6 @@ export default function SignIn() {
 
     const arenaRect = arena.getBoundingClientRect();
     const buttonRect = buttonWrapper.getBoundingClientRect();
-    const cardRect = cardElement.getBoundingClientRect();
     const startX = buttonRect.left - arenaRect.left;
     const startY = buttonRect.top - arenaRect.top;
     const startWidth = buttonRect.width;
@@ -407,8 +392,6 @@ export default function SignIn() {
     const endY = arenaRect.height - PADDLE_OFFSET;
     const ballEndX = arenaRect.width / 2;
     const ballEndY = arenaRect.height - PADDLE_OFFSET - PADDLE_HEIGHT - 32;
-    const cardX = cardRect.left - arenaRect.left;
-    const cardY = cardRect.top - arenaRect.top;
 
     setTransformMeta({
       startX,
@@ -423,12 +406,6 @@ export default function SignIn() {
       ballEndX,
       ballEndY,
     });
-    transformSnapshotRef.current = {
-      cardX,
-      cardY,
-      cardWidth: cardRect.width,
-      cardHeight: cardRect.height,
-    };
 
     setTransformProgress(0);
     const duration = 1100;
@@ -501,7 +478,6 @@ export default function SignIn() {
   const reset = () => {
     setPhase("form");
     setBattleState(null);
-    transformSnapshotRef.current = null;
   };
 
   const hpPercent = battleState
@@ -550,19 +526,6 @@ export default function SignIn() {
   const labelOpacity = transformMeta
     ? Math.max(0, 1 - transformLinear * 1.2)
     : 0;
-  const baseButtonClass = buttonVariants({
-    variant: "default",
-    size: "default",
-  });
-  const paddleClassName = `${baseButtonClass} pointer-events-none select-none gap-0 px-4 text-sm font-medium`;
-  const cardTransform =
-    isBattle && battleState
-      ? `translate3d(${battleState.enemy.x}px, ${battleState.enemy.y}px, 0)`
-      : undefined;
-  const cardWidthStyle =
-    isBattle && battleState ? battleState.enemy.width : undefined;
-  const cardHeightStyle =
-    isBattle && battleState ? battleState.enemy.height : undefined;
 
   return (
     <div className="relative flex h-screen w-screen items-center justify-center overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100">
@@ -591,14 +554,13 @@ export default function SignIn() {
                 : "relative"
             } z-20 transition-transform`}
             style={{
-              width: cardWidthStyle ?? undefined,
-              height: cardHeightStyle ?? undefined,
+              width: "min(90vw, 28rem)",
               transform:
-                cardTransform && battleState
-                  ? `${cardTransform} rotate(${
-                      battleState.enemy.wobble * 8
-                    }deg)`
-                  : cardTransform ?? undefined,
+                isBattle && battleState
+                  ? `translate3d(${battleState.enemy.x}px, ${
+                      battleState.enemy.y
+                    }px, 0) rotate(${battleState.enemy.wobble * 8}deg)`
+                  : undefined,
               transition: isBattle ? "transform 80ms ease-out" : undefined,
             }}
           >
@@ -687,18 +649,29 @@ export default function SignIn() {
         {isTransform && transformMeta && (
           <>
             <div
-              className={`${paddleClassName} absolute`}
+              className="pointer-events-none absolute flex items-center justify-center"
               style={{
                 width: transformPaddleWidth,
                 height: transformPaddleHeight,
                 left: transformPaddleX,
                 top: transformPaddleY,
                 borderRadius: transformPaddleRadius,
-                padding: 0,
-                fontSize: "0.75rem",
+                background: `linear-gradient(135deg, rgba(14,165,233,${
+                  0.35 + transformEased * 0.4
+                }) 5%, rgba(6,182,212,${
+                  0.55 + transformEased * 0.35
+                }) 55%, rgba(125,211,252,${0.45 + transformEased * 0.4}) 100%)`,
+                boxShadow: `0 0 ${12 + transformEased * 18}px rgba(6,182,212,${
+                  0.3 + transformEased * 0.45
+                })`,
               }}
             >
-              <span style={{ opacity: labelOpacity }}>Login</span>
+              <span
+                className="text-[11px] uppercase tracking-[0.35em] text-slate-900"
+                style={{ opacity: labelOpacity }}
+              >
+                Login
+              </span>
             </div>
 
             <div
@@ -709,18 +682,18 @@ export default function SignIn() {
                 left: transformBallX - BALL_SIZE / 2,
                 top: transformBallY - BALL_SIZE / 2,
                 transform: `scale(${1 + transformEased * 0.45})`,
+                filter: `drop-shadow(0 0 ${
+                  10 + transformEased * 18
+                }px rgba(6,182,212,0.5))`,
               }}
             >
               <div
-                className="absolute inset-0 rounded-full border-2 border-slate-300 border-t-transparent animate-spin"
+                className="absolute inset-0 rounded-full border-2 border-cyan-200/80 border-t-transparent animate-spin"
                 style={{ opacity: spinnerOpacity, animationDuration: "0.7s" }}
               />
               <div
-                className="absolute inset-0 rounded-full bg-slate-100"
-                style={{
-                  opacity: ballOpacity,
-                  border: "1px solid rgba(148, 163, 184, 0.6)",
-                }}
+                className="absolute inset-0 rounded-full bg-gradient-to-br from-cyan-200 via-cyan-400 to-cyan-500"
+                style={{ opacity: ballOpacity }}
               />
             </div>
           </>
@@ -750,20 +723,20 @@ export default function SignIn() {
               </div>
             </div>
 
-            <div
-              className={`${paddleClassName} absolute`}
+            <Button
+              type="button"
+              className="pointer-events-none absolute flex h-6 items-center justify-center rounded-full bg-cyan-400/90 px-6 text-xs font-semibold uppercase tracking-[0.4em] text-slate-900 shadow-[0_0_20px_rgba(6,182,212,0.4)]"
               style={{
                 width: battleState.paddleWidth,
-                height: PADDLE_HEIGHT,
                 left: battleState.paddleX,
                 top: battleState.arenaHeight - PADDLE_OFFSET,
-                borderRadius: PADDLE_HEIGHT / 2,
-                padding: 0,
-                fontSize: "0.75rem",
+                filter: `drop-shadow(0 0 12px rgba(6,182,212,${
+                  0.25 + battleState.combo / 12
+                }))`,
               }}
             >
               Login
-            </div>
+            </Button>
 
             <div
               className="absolute"
@@ -773,9 +746,12 @@ export default function SignIn() {
                 left: battleState.ball.x - BALL_SIZE / 2,
                 top: battleState.ball.y - BALL_SIZE / 2,
                 transform: `scale(${1 + battleState.combo / 12})`,
+                filter: `drop-shadow(0 0 ${
+                  12 + battleState.combo * 4
+                }px rgba(6,182,212,0.5))`,
               }}
             >
-              <div className="h-full w-full rounded-full border border-slate-300 bg-slate-100 transition-transform" />
+              <div className="h-full w-full animate-[pulse_1.2s_ease-in-out_infinite] rounded-full bg-gradient-to-br from-cyan-200 via-cyan-400 to-cyan-500" />
             </div>
 
             <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-[11px] uppercase tracking-[0.4em] text-cyan-200/70">

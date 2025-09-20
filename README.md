@@ -1,2 +1,3 @@
 # BattleAuth
-Guys, I think I have downloaded wrong BetterAuth framework.
+
+An authentication system with some questionable method.

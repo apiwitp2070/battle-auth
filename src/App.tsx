@@ -5,7 +5,7 @@ export default function homepage() {
   return (
     <>
       <Header />
-      <SignInWithBrickBreaker />;
+      <SignInWithBrickBreaker />
     </>
   );
 }

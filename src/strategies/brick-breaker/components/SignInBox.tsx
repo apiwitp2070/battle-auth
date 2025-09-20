@@ -9,7 +9,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { type RefObject } from "react";
+import { useState, type RefObject } from "react";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +21,9 @@ interface SignInBoxProps {
   onLogin: () => void;
 }
 
+const DEFAULT_EMAIL = "test@example.email";
+const DEFAULT_PASSWORD = "123456";
+
 export default function SignInBox({
   ref,
   loading,
@@ -29,6 +32,10 @@ export default function SignInBox({
   onLogin,
 }: SignInBoxProps) {
   const disabled = isBattle || loading || isTransform;
+
+  const [email, setEmail] = useState(DEFAULT_EMAIL);
+  const [password, setPassword] = useState(DEFAULT_PASSWORD);
+  const [rememberMe, setRememberMe] = useState(false);
 
   return (
     <Card
@@ -59,7 +66,9 @@ export default function SignInBox({
                 type="email"
                 placeholder="m@example.com"
                 required
+                value={email}
                 disabled={disabled}
+                onChange={(event) => setEmail(event.target.value)}
               />
             </div>
 
@@ -77,12 +86,19 @@ export default function SignInBox({
                 placeholder="password"
                 autoComplete="password"
                 required
+                value={password}
                 disabled={disabled}
+                onChange={(event) => setPassword(event.target.value)}
               />
             </div>
 
             <div className="flex items-center gap-2">
-              <Checkbox id="remember" disabled={disabled} />
+              <Checkbox
+                id="remember"
+                checked={rememberMe}
+                onCheckedChange={(value) => setRememberMe(Boolean(value))}
+                disabled={disabled}
+              />
               <Label htmlFor="remember">Remember me</Label>
             </div>
 

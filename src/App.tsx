@@ -1,5 +1,11 @@
 import SignInWithBrickBreaker from "@/strategies/brick-breaker/SignInWithBrickBreaker";
+import Header from "./components/common/Header";
 
 export default function homepage() {
-  return <SignInWithBrickBreaker />;
+  return (
+    <>
+      <Header />
+      <SignInWithBrickBreaker />;
+    </>
+  );
 }
